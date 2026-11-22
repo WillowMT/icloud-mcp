@@ -1,11 +1,11 @@
 /**
  * Reminders Module
- * MCP tool definitions for Reminders.app
- * NOTE: Only available in LOCAL mode (AppleScript)
+ * MCP tool definitions for Reminders.app and read-only iCloud CalDAV
  */
 
 const { z } = require('zod');
 const localClient = require('./local-client');
+const cloudClient = require('./caldav-client');
 const { formatError } = require('../utils/error-handler');
 const { listOutput, listResult } = require('../utils/schemas');
 const { isLocalMode } = require('../mode');
@@ -25,15 +25,12 @@ const remindersTools = [
     name: 'list-reminder-lists',
     outputSchema: listOutput('list-reminder-lists'),
     title: 'List Reminder Lists',
-    description: 'Lists all reminder lists from Reminders.app (LOCAL mode only)',
+    description: 'Lists reminder lists. Cloud mode exposes only lists available via iCloud CalDAV; some newer lists may be absent.',
     inputSchema: {},
-    annotations: {"readOnlyHint":true,"idempotentHint":true,"openWorldHint":false},
+    annotations: {"readOnlyHint":true,"idempotentHint":true,"openWorldHint":true},
     handler: async () => {
-      const modeError = requireLocalMode('list-reminder-lists');
-      if (modeError) return modeError;
-
       try {
-        const lists = await localClient.listReminderLists();
+        const lists = await (isLocalMode() ? localClient : cloudClient).listReminderLists();
         return {
           content: [{
             type: 'text',
@@ -50,19 +47,16 @@ const remindersTools = [
     name: 'list-reminders',
     outputSchema: listOutput('list-reminders'),
     title: 'List Reminders',
-    description: 'Lists reminders from a specific list or all lists (LOCAL mode only)',
+    description: 'Lists reminders from a specific list or all lists. Cloud mode supports only CalDAV-accessible reminder lists; some newer lists may be absent.',
     inputSchema: {
       listName: z.string().optional().describe('Name of the reminder list (optional, lists all if not provided)'),
       includeCompleted: z.boolean().optional().describe('Include completed reminders (default: false)'),
       count: z.number().int().min(1).max(200).optional().describe('Maximum number of reminders to return (default: 50)')
     },
-    annotations: {"readOnlyHint":true,"idempotentHint":true,"openWorldHint":false},
+    annotations: {"readOnlyHint":true,"idempotentHint":true,"openWorldHint":true},
     handler: async ({ listName, includeCompleted = false, count = 50 }) => {
-      const modeError = requireLocalMode('list-reminders');
-      if (modeError) return modeError;
-
       try {
-        const reminders = await localClient.listReminders(listName, includeCompleted, count);
+        const reminders = await (isLocalMode() ? localClient : cloudClient).listReminders(listName, includeCompleted, count);
         return {
           content: [{
             type: 'text',
@@ -187,18 +181,15 @@ const remindersTools = [
   {
     name: 'search-reminders',
     title: 'Search Reminders',
-    description: 'Search reminders by text in name or body (LOCAL mode only)',
+    description: 'Search reminder names or notes. Cloud mode supports only CalDAV-accessible lists; some newer lists may be absent.',
     inputSchema: {
       query: z.string().describe('Search text (required)'),
       count: z.number().int().min(1).max(200).optional().describe('Maximum results to return (default: 25)')
     },
-    annotations: {"readOnlyHint":true,"idempotentHint":true,"openWorldHint":false},
+    annotations: {"readOnlyHint":true,"idempotentHint":true,"openWorldHint":true},
     handler: async ({ query, count = 25 }) => {
-      const modeError = requireLocalMode('search-reminders');
-      if (modeError) return modeError;
-
       try {
-        const results = await localClient.searchReminders(query, count);
+        const results = await (isLocalMode() ? localClient : cloudClient).searchReminders(query, count);
         return {
           content: [{
             type: 'text',

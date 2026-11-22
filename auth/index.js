@@ -36,7 +36,7 @@ function getCredentials() {
 async function handleAbout() {
   const mode = getMode();
   const localServices = 'Email, Calendar, Contacts, Reminders, Notes, Messages, Safari';
-  const cloudServices = 'Email, Calendar, Contacts';
+  const cloudServices = 'Email, Calendar, Contacts, read-only CalDAV-visible Reminders';
 
   return formatSuccess(
     `iCloud MCP Server v${version}
@@ -90,7 +90,8 @@ Password: ****-****-****-**** (configured)
 Services available:
 - Email (IMAP/SMTP)
 - Calendar (CalDAV)
-- Contacts (CardDAV)`
+- Contacts (CardDAV)
+- Reminders (read-only CalDAV-visible lists)`
   );
 }
 
@@ -126,7 +127,7 @@ async function handleSetMode(args) {
 
   const services = mode === 'local'
     ? 'Email, Calendar, Contacts, Reminders, Notes, Messages, Safari'
-    : 'Email, Calendar, Contacts';
+    : 'Email, Calendar, Contacts, read-only CalDAV-visible Reminders';
 
   return formatSuccess(
     `Mode changed: ${previousMode.toUpperCase()} → ${mode.toUpperCase()}

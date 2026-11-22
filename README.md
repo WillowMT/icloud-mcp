@@ -18,7 +18,7 @@
 
 <img src="assets/demo.gif" alt="Claude creating a note, a reminder and a calendar event through icloud-mcp" width="100%">
 
-icloud-mcp covers seven Apple services with two interchangeable backends, and as far as we know it is the only MCP server that does. In local mode it drives the native macOS apps through AppleScript: no credentials, no network, and it reaches the services the iCloud protocols do not expose (Reminders, Notes, Messages, Safari). In cloud mode it speaks IMAP/SMTP, CalDAV and CardDAV instead, so it runs on any machine, not just a Mac. The `set-mode` tool switches between the two at runtime, without a restart.
+icloud-mcp covers seven Apple services with two interchangeable backends. Local mode drives native macOS apps through AppleScript. Cloud mode runs on any machine using iCloud IMAP/SMTP, CalDAV and CardDAV, including read-only access to CalDAV-visible reminder lists. The `set-mode` tool switches between the two at runtime when all writes are enabled.
 
 [![Install with NPX in VS Code](https://img.shields.io/badge/VS_Code-NPM-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=icloud&config=%7B%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22mcp-icloud%22%5D%7D)
 [![Install in Cursor](https://img.shields.io/badge/Cursor-Install-000000?style=flat-square&logo=cursor&logoColor=white)](https://cursor.com/en/install-mcp?name=icloud&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIm1jcC1pY2xvdWQiXX0=)
@@ -62,7 +62,7 @@ The server collects nothing and keeps nothing: no telemetry, no analytics, no st
 
 ## Tools
 
-Tools marked local only return an error in cloud mode, because the iCloud protocols do not expose those services.
+Tools marked local only return an error in cloud mode.
 
 ### Authentication
 
@@ -103,7 +103,14 @@ Tools marked local only return an error in cloud mode, because the iCloud protoc
 - **list-contact-accounts**: no input (local only). Returns each account's `id`, `name`, `type` (`cardDAV`, `exchange`, `local`) and `groupCount`
 - **list-contact-groups**: `accountId` (string, optional) (local only)
 
-### Reminders (local only)
+### Reminders
+
+Listing and searching work in cloud mode for lists exposed as CalDAV VTODO.
+Some newer CloudKit-backed lists may be absent; an empty result does not prove
+there are no reminders in Apple Reminders. Recurring reminders may not be
+expanded into occurrences, and date-only or floating due dates are not UTC.
+Cloud mode supports no reminder changes; the write tools below are local only.
+The approach was informed by [icloud-reminders-mcp](https://github.com/Lingnik/icloud-reminders-mcp).
 
 - **list-reminder-lists**: no input
 - **list-reminders**: `listName` (string, optional), `includeCompleted` (boolean, optional), `count` (number, optional)
@@ -267,7 +274,7 @@ Call `about` for the active mode and service list, and `check-auth-status` to co
 
 - Node.js 20 or newer
 - Local mode: macOS with the relevant apps installed, plus `imsg` and Full Disk Access if you want to read messages
-- Cloud mode: any OS, an iCloud account with two-factor authentication, and an app-specific password. Covers Email, Calendar and Contacts only
+- Cloud mode: any OS, an iCloud account with two-factor authentication, and an app-specific password. Covers Email, Calendar, Contacts and read-only CalDAV-visible Reminders.
 
 ## Configuration
 

@@ -7,7 +7,7 @@
  * - Email (via IMAP/SMTP or Mail.app)
  * - Calendar (via CalDAV or Calendar.app)
  * - Contacts (via CardDAV or Contacts.app)
- * - Reminders (via Reminders.app - local only)
+ * - Reminders (via Reminders.app or read-only CalDAV)
  * - Notes (via Notes.app - local only)
  * - Messages (via Messages.app - local only)
  * - Safari (via Safari.app - local only)
@@ -85,8 +85,9 @@ function buildServer() {
 LOCAL (default, macOS only) drives the native apps via AppleScript.
 CLOUD uses the iCloud protocols and needs an app-specific password.
 
-Reminders, Notes, Messages and Safari are LOCAL only: calling them in CLOUD
-mode returns an error. The set-mode tool is available only when writes are enabled.`
+Cloud Reminders are read-only and only available for CalDAV-accessible lists;
+other lists may be absent. Notes, Messages and Safari require LOCAL mode.
+The set-mode tool is available only when all writes are enabled.`
     }
   );
 
@@ -120,7 +121,7 @@ console.error(`[icloud-mcp] Tools available: ${TOOLS.length}`);
 if (getMode() === 'local') {
   console.error('[icloud-mcp] Services: Email, Calendar, Contacts, Reminders, Notes, Messages, Safari');
 } else {
-  console.error('[icloud-mcp] Services: Email, Calendar, Contacts');
+  console.error('[icloud-mcp] Services: Email, Calendar, Contacts, read-only Reminders');
   console.error(`[icloud-mcp] Credentials configured: ${!!(config.ICLOUD_EMAIL && config.ICLOUD_APP_PASSWORD)}`);
 }
 
