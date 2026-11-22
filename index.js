@@ -54,9 +54,11 @@ const READ_ONLY_TOOLS = new Set([
   'list-notes', 'read-note', 'search-notes', 'list-chats', 'read-messages',
   'list-safari-tabs', 'get-current-safari-url'
 ]);
+const CALENDAR_WRITE_TOOLS = new Set(['create-event', 'update-event', 'delete-event']);
 const TOOLS = process.env.ICLOUD_ALLOW_WRITES === 'true'
   ? ALL_TOOLS
-  : ALL_TOOLS.filter(tool => READ_ONLY_TOOLS.has(tool.name));
+  : ALL_TOOLS.filter(tool => READ_ONLY_TOOLS.has(tool.name) ||
+      (process.env.ICLOUD_ALLOW_CALENDAR_WRITES === 'true' && CALENDAR_WRITE_TOOLS.has(tool.name)));
 
 /**
  * Build a server instance with every tool registered.

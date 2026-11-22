@@ -42,21 +42,41 @@ const { validateDavUrl, createSafeDavFetch } = require('../utils/safe-dav-fetch'
     { jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2025-11-25', capabilities: {}, clientInfo: { name: 'test', version: '1' } } },
     { jsonrpc: '2.0', method: 'notifications/initialized' },
     { jsonrpc: '2.0', id: 2, method: 'tools/list' },
-    { jsonrpc: '2.0', id: 3, method: 'tools/call', params: { name: 'delete-contact', arguments: { contactUrl: 'https://evil.test/' } } }
+    { jsonrpc: '2.0', id: 3, method: 'tools/call', params: { name: 'delete-contact', arguments: { contactUrl: 'https://evil.test/' } } },
+    { jsonrpc: '2.0', id: 4, method: 'tools/call', params: { name: 'send-email', arguments: { to: 'test@example.test', subject: 'test', body: 'test' } } },
+    { jsonrpc: '2.0', id: 5, method: 'tools/call', params: { name: 'create-event', arguments: { summary: 'test', start: '2030-01-01T10:00:00Z', end: '2030-01-01T11:00:00Z' } } },
+    { jsonrpc: '2.0', id: 6, method: 'tools/call', params: { name: 'update-event', arguments: { eventUrl: 'https://evil.test/event', summary: 'test' } } },
+    { jsonrpc: '2.0', id: 7, method: 'tools/call', params: { name: 'delete-event', arguments: { eventUrl: 'https://evil.test/event' } } }
   ].map(JSON.stringify).join('\n') + '\n';
-  for (const enabled of [false, true]) {
-    const env = { ...process.env, USE_LOCAL_MODE: 'false', ICLOUD_EMAIL: '', ICLOUD_APP_PASSWORD: '', ICLOUD_ALLOW_WRITES: enabled ? 'true' : 'false' };
+  for (const mode of ['readonly', 'calendar', 'all']) {
+    const env = { ...process.env, USE_LOCAL_MODE: 'false', ICLOUD_EMAIL: '', ICLOUD_APP_PASSWORD: '', ICLOUD_ALLOW_WRITES: mode === 'all' ? 'true' : 'false', ICLOUD_ALLOW_CALENDAR_WRITES: mode === 'calendar' ? 'true' : 'false' };
     const result = spawnSync(process.execPath, ['index.js'], { input: requests, encoding: 'utf8', env, timeout: 20000 });
     assert.equal(result.status, 0, result.stderr);
-    const response = result.stdout.trim().split('\n').map(JSON.parse).find(r => r.id === 2);
+    const responses = result.stdout.trim().split('\n').map(JSON.parse);
+    const response = responses.find(r => r.id === 2);
     const tools = response.result.tools;
     assert.ok(tools.some(t => t.name === 'about'));
-    assert.equal(tools.some(t => t.name === 'delete-contact'), enabled);
-    if (!enabled) {
+    for (const name of ['create-event', 'update-event', 'delete-event']) {
+      assert.equal(tools.some(t => t.name === name), mode !== 'readonly', `${mode}: ${name}`);
+    }
+    for (const name of ['delete-contact', 'create-contact', 'send-email', 'send-message', 'create-note', 'set-mode']) {
+      assert.equal(tools.some(t => t.name === name), mode === 'all', `${mode}: ${name}`);
+    }
+    if (mode === 'readonly') {
       assert.ok(tools.every(t => t.annotations.readOnlyHint === true));
-      const denied = result.stdout.trim().split('\n').map(JSON.parse).find(r => r.id === 3);
-      assert.ok(denied.error || denied.result?.isError, 'direct call to disabled tool must fail');
+    }
+    if (mode !== 'all') {
+      for (const id of [3, 4]) {
+        const denied = responses.find(r => r.id === id);
+        assert.match(denied.error?.message || '', /not found/i, 'disabled non-calendar tool must not be registered');
+      }
+    }
+    for (const id of [5, 6, 7]) {
+      const call = responses.find(r => r.id === id);
+      assert.ok(call.error || call.result?.isError, 'test credentials must not allow writes');
+      if (mode !== 'readonly') assert.match(JSON.stringify(call), /Authentication failed|UNAUTHORIZED/i, 'enabled calendar calls reach handler');
+      else assert.match(call.error?.message || '', /not found/i, 'calendar writes must be unregistered by default');
     }
   }
-  console.log('DAV security and read-only server tests passed');
+  console.log('DAV security and tool access mode tests passed');
 })().catch(error => { console.error(error); process.exitCode = 1; });

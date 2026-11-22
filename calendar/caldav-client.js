@@ -184,6 +184,7 @@ END:VCALENDAR`;
     filename: `${uid}.ics`,
     iCalString: icalData
   });
+  if (!result.ok) throw new Error(`Calendar create failed (HTTP ${result.status})`);
 
   return {
     success: true,
@@ -263,13 +264,14 @@ async function updateEvent(eventUrl, changes) {
 
   const updated = applyICalChanges(existing.data, changes);
 
-  await client.updateCalendarObject({
+  const result = await client.updateCalendarObject({
     calendarObject: {
       url: eventUrl,
       data: updated,
       etag: existing.etag || ''
     }
   });
+  if (!result.ok) throw new Error(`Calendar update failed (HTTP ${result.status})`);
 
   return { success: true, url: eventUrl };
 }
@@ -280,12 +282,13 @@ async function updateEvent(eventUrl, changes) {
 async function deleteEvent(eventUrl) {
   const client = await getClient();
 
-  await client.deleteCalendarObject({
+  const result = await client.deleteCalendarObject({
     calendarObject: {
       url: eventUrl,
       etag: '' // Will be fetched
     }
   });
+  if (!result.ok) throw new Error(`Calendar delete failed (HTTP ${result.status})`);
 
   return { success: true };
 }

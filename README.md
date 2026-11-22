@@ -37,11 +37,17 @@ Every tool argument is validated against a zod schema before the handler runs. A
 
 ## Personal fork safety defaults
 
-This fork defaults to **read-only tools**. To enable all write, send, delete,
-navigation and mode-switching tools, set `ICLOUD_ALLOW_WRITES=true` in the
-server environment and restart it. This is a broad opt-in, not per-action
-approval; use a client that asks for confirmation. Read-only tools can still
-expose sensitive information to the connected AI client and its provider.
+This fork defaults to **read-only tools**. To enable only calendar creation,
+updates and deletion, set `ICLOUD_ALLOW_CALENDAR_WRITES=true` in the server
+environment and restart it. Keep `ICLOUD_ALLOW_WRITES` unset or `false`:
+setting it to `true` overrides the calendar-only setting and enables **all**
+write, send, delete, navigation and mode-switching tools.
+
+These switches are not per-action approval; use a client that asks for
+confirmation before calendar changes. Calendar updates and deletes may affect
+an entire recurring series, and cloud updates are experimental. Read-only
+tools can still expose sensitive information to the connected AI client and
+its provider.
 
 Cloud DAV requests are restricted to HTTPS Apple iCloud DAV service and
 numbered shard hosts, including redirects. Unrecognized Apple hosts fail
