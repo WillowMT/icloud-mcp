@@ -19,8 +19,11 @@ const { validateDavUrl, createSafeDavFetch } = require('../utils/safe-dav-fetch'
   await assert.rejects(safeFetch('https://caldav.icloud.com/', { headers: { authorization: 'Basic test' } }), /Untrusted/);
   assert.equal(calls.length, 1, 'never send redirect request to attacker');
   assert.equal(calls[0].options.redirect, 'manual');
+  const manual = await safeFetch('https://caldav.icloud.com/', { redirect: 'manual' });
+  assert.equal(manual.status, 302, 'discovery must receive manual redirects');
+  assert.equal(calls.length, 2, 'manual discovery must not follow redirect');
   await assert.rejects(safeFetch('https://evil.test/'), /Untrusted/);
-  assert.equal(calls.length, 1);
+  assert.equal(calls.length, 2);
   let hop = 0;
   const allowed = createSafeDavFetch(async () => ++hop === 1
     ? { status: 307, headers: new Headers({ location: 'https://p42-caldav.icloud.com/a' }) }
@@ -33,7 +36,7 @@ const { validateDavUrl, createSafeDavFetch } = require('../utils/safe-dav-fetch'
   client.authHeaders = { authorization: 'Basic test' };
   await assert.rejects(client.deleteCalendarObject({ calendarObject: { url: 'https://evil.test/steal' } }), /Untrusted/);
   await assert.rejects(client.deleteVCard({ vCard: { url: 'https://evil.test/steal' } }), /Untrusted/);
-  assert.equal(calls.length, 1);
+  assert.equal(calls.length, 2);
 
   const requests = [
     { jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2025-11-25', capabilities: {}, clientInfo: { name: 'test', version: '1' } } },
