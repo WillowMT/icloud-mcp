@@ -34,8 +34,7 @@ const { notesTools } = require('./notes');
 const { messagesTools } = require('./messages');
 const { safariTools } = require('./safari');
 
-// All tools always available - handlers check mode and error if unsupported
-const TOOLS = [
+const ALL_TOOLS = [
   ...authTools,
   ...emailTools,
   ...calendarTools,
@@ -45,6 +44,19 @@ const TOOLS = [
   ...messagesTools,
   ...safariTools
 ];
+// Explicit allowlist: a future or incorrectly annotated tool cannot silently
+// gain access in read-only mode.
+const READ_ONLY_TOOLS = new Set([
+  'about', 'check-auth-status', 'list-emails', 'read-email', 'search-emails',
+  'list-folders', 'list-events', 'list-calendars', 'list-contacts',
+  'search-contacts', 'read-contact', 'list-contact-accounts', 'list-contact-groups',
+  'list-reminder-lists', 'list-reminders', 'search-reminders', 'list-note-folders',
+  'list-notes', 'read-note', 'search-notes', 'list-chats', 'read-messages',
+  'list-safari-tabs', 'get-current-safari-url'
+]);
+const TOOLS = process.env.ICLOUD_ALLOW_WRITES === 'true'
+  ? ALL_TOOLS
+  : ALL_TOOLS.filter(tool => READ_ONLY_TOOLS.has(tool.name));
 
 /**
  * Build a server instance with every tool registered.
@@ -62,7 +74,7 @@ function buildServer() {
     },
     {
       capabilities: { tools: { listChanged: true } },
-      // The 41-tool list is identical in both modes (mode changes behaviour,
+      // The tool list is identical in both modes (mode changes behaviour,
       // not the roster), so clients may cache it. Without this the SDK
       // advertises ttlMs: 0 and every 2026-era client re-fetches constantly.
       cacheHints: { 'tools/list': { ttlMs: 3600000, cacheScope: 'public' } },
@@ -72,7 +84,7 @@ LOCAL (default, macOS only) drives the native apps via AppleScript.
 CLOUD uses the iCloud protocols and needs an app-specific password.
 
 Reminders, Notes, Messages and Safari are LOCAL only: calling them in CLOUD
-mode returns an error. Use set-mode to switch without restarting.`
+mode returns an error. The set-mode tool is available only when writes are enabled.`
     }
   );
 

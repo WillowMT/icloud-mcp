@@ -35,6 +35,21 @@ Credentials are never logged. `ICLOUD_APP_PASSWORD` is read once at startup and 
 
 Every tool argument is validated against a zod schema before the handler runs. Arguments are also coerced at each AppleScript interpolation site, so a value that is not a number cannot reach a script template.
 
+## Personal fork safety defaults
+
+This fork defaults to **read-only tools**. To enable all write, send, delete,
+navigation and mode-switching tools, set `ICLOUD_ALLOW_WRITES=true` in the
+server environment and restart it. This is a broad opt-in, not per-action
+approval; use a client that asks for confirmation. Read-only tools can still
+expose sensitive information to the connected AI client and its provider.
+
+Cloud DAV requests are restricted to HTTPS Apple iCloud DAV service and
+numbered shard hosts, including redirects. Unrecognized Apple hosts fail
+closed and may need to be reviewed before being added. This is not a full
+security audit or an account-ownership check. For reproducible installs, use
+the repository lockfile (`pnpm install --frozen-lockfile --ignore-scripts`) and
+run this checked-out fork, not the unpinned upstream `npx` package below.
+
 ## Privacy Policy
 
 The server collects nothing and keeps nothing: no telemetry, no analytics, no state on disk. Your data moves only between your machine, the AI client you connect and Apple's services. The full policy, covering collection, storage, third-party sharing, retention and contact, is in [PRIVACY.md](PRIVACY.md).

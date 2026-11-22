@@ -5,6 +5,7 @@
 const { DAVClient } = require('tsdav');
 const config = require('../config');
 const { getCredentials } = require('../auth');
+const { createSafeDavFetch } = require('../utils/safe-dav-fetch');
 
 let cachedClient = null;
 
@@ -25,7 +26,8 @@ async function getClient() {
       password: creds.password
     },
     authMethod: 'Basic',
-    defaultAccountType: 'carddav'
+    defaultAccountType: 'carddav',
+    fetch: createSafeDavFetch()
   });
 
   try {

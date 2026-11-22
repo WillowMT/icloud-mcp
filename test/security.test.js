@@ -276,7 +276,7 @@ check('formatSuccess only adds structuredContent when given', () => {
  */
 function runServer(requests) {
   return new Promise((resolve, reject) => {
-    const child = spawn(process.execPath, [path.join(ROOT, 'index.js')], { stdio: ['pipe', 'pipe', 'pipe'] });
+    const child = spawn(process.execPath, [path.join(ROOT, 'index.js')], { stdio: ['pipe', 'pipe', 'pipe'], env: { ...process.env, ICLOUD_ALLOW_WRITES: 'true' } });
     let out = '';
     const timer = setTimeout(() => { child.kill(); reject(new Error('server timed out')); }, 20000);
     child.stdout.on('data', c => { out += c; });

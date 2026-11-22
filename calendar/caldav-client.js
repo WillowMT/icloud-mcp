@@ -6,6 +6,7 @@ const { DAVClient } = require('tsdav');
 const ICAL = require('ical.js');
 const config = require('../config');
 const { getCredentials } = require('../auth');
+const { createSafeDavFetch } = require('../utils/safe-dav-fetch');
 
 let cachedClient = null;
 
@@ -26,7 +27,8 @@ async function getClient() {
       password: creds.password
     },
     authMethod: 'Basic',
-    defaultAccountType: 'caldav'
+    defaultAccountType: 'caldav',
+    fetch: createSafeDavFetch()
   });
 
   try {
